@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { Storage } from '../utils/Storage.js';
 import { Leaderboard } from '../utils/Leaderboard.js';
 import { haptic, hideMainButton } from '../utils/TelegramApp.js';
+import { music, bindMusicUnlock } from '../utils/MusicManager.js';
 
 export default class MenuScene extends Phaser.Scene {
   constructor() {
@@ -10,6 +11,7 @@ export default class MenuScene extends Phaser.Scene {
 
   create() {
     hideMainButton();
+    bindMusicUnlock(this);
     const { width, height } = this.scale;
     const settings = Storage.getSettings();
     const best = Storage.loadScore();
@@ -31,6 +33,7 @@ export default class MenuScene extends Phaser.Scene {
 
     this.makeButton(width / 2, height * 0.48, 'ИГРАТЬ', 0x2563eb, () => {
       haptic('medium');
+      music.unlock();
       this.scene.start('GameScene');
       this.scene.launch('UIScene');
     });
@@ -47,7 +50,7 @@ export default class MenuScene extends Phaser.Scene {
       this.showSettings(settings);
     });
 
-    this.add.text(width / 2, height * 0.88, 'Свайп ↑↓ — гравитация  |  ←→ — движение', {
+    this.add.text(width / 2, height * 0.88, 'Нажмите экран — прыжок  |  Ведите палец — влево/вправо', {
       fontFamily: 'sans-serif',
       fontSize: '12px',
       color: '#64748b',
@@ -103,6 +106,7 @@ export default class MenuScene extends Phaser.Scene {
       txt.on('pointerdown', () => {
         settings[key] = !settings[key];
         Storage.saveSettings(settings);
+        music.sync();
         panel.destroy();
         this.scene.restart();
       });
