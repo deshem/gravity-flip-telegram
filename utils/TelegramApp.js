@@ -10,6 +10,9 @@ export function initTelegram() {
 
   applyTheme(tg);
   tg.onEvent('themeChanged', () => applyTheme(tg));
+  tg.onEvent('viewportChanged', () => {
+    window.dispatchEvent(new Event('resize'));
+  });
 
   return tg;
 }

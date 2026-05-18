@@ -6,31 +6,30 @@ import GameScene from './scenes/GameScene.js';
 import UIScene from './scenes/UIScene.js';
 import GameOverScene from './scenes/GameOverScene.js';
 import { initTelegram } from './utils/TelegramApp.js';
+import { getViewport, getDpr, resizeGame, applySafeArea } from './utils/Viewport.js';
 
-initTelegram();
-
-const DESIGN_WIDTH = 390;
-const DESIGN_HEIGHT = 844;
-
-function getSize() {
-  const tg = window.Telegram?.WebApp;
-  return {
-    width: tg?.viewportStableWidth || window.innerWidth,
-    height: tg?.viewportStableHeight || window.innerHeight
-  };
-}
+const tg = initTelegram();
+const { width, height } = getViewport();
 
 const config = {
   type: Phaser.AUTO,
-  width: DESIGN_WIDTH,
-  height: DESIGN_HEIGHT,
+  width,
+  height,
   parent: 'game-container',
   backgroundColor: '#0a0e1a',
+  resolution: Math.min(getDpr(), 2),
+  render: {
+    antialias: true,
+    roundPixels: true,
+    pixelArt: false,
+    powerPreference: 'high-performance'
+  },
   scale: {
-    mode: Phaser.Scale.FIT,
-    autoCenter: Phaser.Scale.CENTER_BOTH,
-    width: DESIGN_WIDTH,
-    height: DESIGN_HEIGHT
+    mode: Phaser.Scale.RESIZE,
+    autoCenter: Phaser.Scale.NO_CENTER,
+    width,
+    height,
+    autoRound: true
   },
   physics: {
     default: 'arcade',
@@ -43,9 +42,25 @@ const config = {
 };
 
 const game = new Phaser.Game(config);
+applySafeArea(game);
 
-window.addEventListener('resize', () => {
-  game.scale.refresh();
-});
+let resizeTimer;
+const onResize = () => {
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(() => {
+    resizeGame(game);
+    const menu = game.scene.getScene('MenuScene');
+    const over = game.scene.getScene('GameOverScene');
+    const ui = game.scene.getScene('UIScene');
+
+    if (menu?.scene.isActive()) menu.scene.restart();
+    if (over?.scene.isActive() && over._initData) over.scene.restart(over._initData);
+    if (ui?.scene.isActive()) ui.scene.restart();
+  }, 150);
+};
+
+window.addEventListener('resize', onResize);
+window.addEventListener('orientationchange', onResize);
+tg?.onEvent?.('viewportChanged', onResize);
 
 export default game;

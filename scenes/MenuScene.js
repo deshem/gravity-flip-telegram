@@ -5,6 +5,7 @@ import { haptic, hideMainButton } from '../utils/TelegramApp.js';
 import { music, bindMusicUnlock } from '../utils/MusicManager.js';
 import {
   layout,
+  addText,
   createButton,
   createPanel,
   createToggleRow,
@@ -25,24 +26,18 @@ export default class MenuScene extends Phaser.Scene {
 
     this.add.rectangle(L.cx, L.cy, L.w, L.h, 0x0a0e1a);
 
-    this.add
-      .text(L.cx, L.h * 0.14, 'GRAVITY FLIP', {
-        fontFamily: 'Segoe UI, system-ui, sans-serif',
-        fontSize: `${L.fontTitle}px`,
-        fontStyle: 'bold',
-        color: '#38bdf8'
-      })
-      .setOrigin(0.5);
+    addText(this, L.cx, L.safeTop + L.usableH * 0.12, 'GRAVITY FLIP', L.fontTitle, {
+      color: '#38bdf8',
+      fontStyle: 'bold',
+      align: 'center'
+    }).setOrigin(0.5);
 
-    this.add
-      .text(L.cx, L.h * 0.22, `Рекорд: ${best}`, {
-        fontFamily: 'Segoe UI, system-ui, sans-serif',
-        fontSize: `${L.fontBody}px`,
-        color: '#94a3b8'
-      })
-      .setOrigin(0.5);
+    addText(this, L.cx, L.safeTop + L.usableH * 0.2, `Рекорд: ${best}`, L.fontBody, {
+      color: '#94a3b8',
+      align: 'center'
+    }).setOrigin(0.5);
 
-    const btnY0 = L.h * 0.38;
+    const btnY0 = L.safeTop + L.usableH * 0.36;
     const btnGap = L.btnH + 14;
 
     createButton(this, L.cx, btnY0, '▶  ИГРАТЬ', () => {
@@ -65,35 +60,31 @@ export default class MenuScene extends Phaser.Scene {
       this.showSettings();
     }, 0x475569);
 
-    this.add
-      .text(L.cx, L.h - L.pad - L.fontSmall * 2, 'Нажмите экран — прыжок\nВедите палец — движение', {
-        fontFamily: 'Segoe UI, system-ui, sans-serif',
-        fontSize: `${L.fontSmall}px`,
-        color: '#64748b',
-        align: 'center',
-        lineSpacing: 6
-      })
-      .setOrigin(0.5, 1);
+    addText(
+      this,
+      L.cx,
+      L.h - L.safeBottom - L.pad,
+      'Нажмите экран — прыжок\nВедите палец — движение',
+      L.fontSmall,
+      { color: '#64748b', align: 'center', lineSpacing: 8 }
+    ).setOrigin(0.5, 1);
   }
 
   showInfo(title, body) {
     const L = layout(this);
     const panel = createPanel(this, {
       title,
-      panelH: Math.min(280, L.h * 0.4),
+      panelH: Math.min(300, Math.round(L.usableH * 0.42)),
       onBack: () => panel.destroy()
     });
 
     panel.content.add(
-      this.add
-        .text(0, 40, body, {
-          fontFamily: 'Segoe UI, system-ui, sans-serif',
-          fontSize: `${L.fontBody}px`,
-          color: '#cbd5e1',
-          align: 'center',
-          lineSpacing: 8
-        })
-        .setOrigin(0.5, 0)
+      addText(this, 0, 36, body, L.fontBody, {
+        color: '#cbd5e1',
+        align: 'center',
+        lineSpacing: 10,
+        wordWrap: { width: panel.panelW - 40 }
+      }).setOrigin(0.5, 0)
     );
   }
 
@@ -104,7 +95,7 @@ export default class MenuScene extends Phaser.Scene {
     const L = layout(this);
     const panel = createPanel(this, {
       title: 'Настройки',
-      panelH: Math.min(400, L.h * 0.62),
+      panelH: Math.min(420, Math.round(L.usableH * 0.65)),
       onBack: () => {
         haptic('light');
         panel.destroy();
@@ -112,10 +103,10 @@ export default class MenuScene extends Phaser.Scene {
     });
 
     const save = () => Storage.saveSettings(settings);
-    const rowGap = 56;
+    const rowGap = 58;
 
     panel.content.add(
-      createToggleRow(this, 0, 20, 'Звук', settings.sound, (v) => {
+      createToggleRow(this, 0, 16, 'Звук', settings.sound, (v) => {
         settings.sound = v;
         save();
         music.sync();
@@ -124,7 +115,7 @@ export default class MenuScene extends Phaser.Scene {
     );
 
     panel.content.add(
-      createToggleRow(this, 0, 20 + rowGap, 'Вибрация', settings.haptic, (v) => {
+      createToggleRow(this, 0, 16 + rowGap, 'Вибрация', settings.haptic, (v) => {
         settings.haptic = v;
         save();
         haptic('light');
@@ -132,7 +123,7 @@ export default class MenuScene extends Phaser.Scene {
     );
 
     panel.content.add(
-      createVolumeRow(this, 0, 20 + rowGap * 2 + 16, settings.volume, (v) => {
+      createVolumeRow(this, 0, 16 + rowGap * 2 + 12, settings.volume, (v) => {
         settings.volume = v;
         save();
         music.applyVolume();
