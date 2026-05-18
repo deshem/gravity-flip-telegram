@@ -94,9 +94,25 @@ export default class GameScene extends Phaser.Scene {
     if (this.paused) {
       this.physics.world.pause();
       music.duck(true);
+      const { width, height } = this.scale;
+      this.pauseOverlay = this.add
+        .container(width / 2, height / 2)
+        .setScrollFactor(0)
+        .setDepth(50);
+      this.pauseOverlay.add([
+        this.add.rectangle(0, 0, width, height, 0x000000, 0.5),
+        this.add.text(0, 0, 'ПАУЗА', {
+          fontFamily: 'Segoe UI, system-ui, sans-serif',
+          fontSize: '36px',
+          color: '#f8fafc',
+          fontStyle: 'bold'
+        }).setOrigin(0.5)
+      ]);
     } else {
       this.physics.world.resume();
       music.duck(false);
+      this.pauseOverlay?.destroy();
+      this.pauseOverlay = null;
     }
   }
 

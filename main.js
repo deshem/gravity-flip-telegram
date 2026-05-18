@@ -9,6 +9,9 @@ import { initTelegram } from './utils/TelegramApp.js';
 
 initTelegram();
 
+const DESIGN_WIDTH = 390;
+const DESIGN_HEIGHT = 844;
+
 function getSize() {
   const tg = window.Telegram?.WebApp;
   return {
@@ -17,17 +20,17 @@ function getSize() {
   };
 }
 
-const { width, height } = getSize();
-
 const config = {
   type: Phaser.AUTO,
-  width,
-  height,
+  width: DESIGN_WIDTH,
+  height: DESIGN_HEIGHT,
   parent: 'game-container',
   backgroundColor: '#0a0e1a',
   scale: {
-    mode: Phaser.Scale.RESIZE,
-    autoCenter: Phaser.Scale.CENTER_BOTH
+    mode: Phaser.Scale.FIT,
+    autoCenter: Phaser.Scale.CENTER_BOTH,
+    width: DESIGN_WIDTH,
+    height: DESIGN_HEIGHT
   },
   physics: {
     default: 'arcade',
@@ -42,8 +45,7 @@ const config = {
 const game = new Phaser.Game(config);
 
 window.addEventListener('resize', () => {
-  const s = getSize();
-  game.scale.resize(s.width, s.height);
+  game.scale.refresh();
 });
 
 export default game;

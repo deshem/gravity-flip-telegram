@@ -2,7 +2,7 @@ const SCORE_KEY = 'gravity_flip_best';
 const COINS_KEY = 'gravity_flip_coins';
 const SETTINGS_KEY = 'gravity_flip_settings';
 
-const defaultSettings = { sound: true, haptic: true };
+const defaultSettings = { sound: true, haptic: true, volume: 70 };
 
 export class Storage {
   static getSettings() {

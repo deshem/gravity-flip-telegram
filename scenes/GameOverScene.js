@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { Storage } from '../utils/Storage.js';
 import { Leaderboard } from '../utils/Leaderboard.js';
 import { setupMainButton, hideMainButton, shareScore, haptic } from '../utils/TelegramApp.js';
+import { layout, createButton } from '../utils/UI.js';
 
 export default class GameOverScene extends Phaser.Scene {
   constructor() {
@@ -15,50 +16,79 @@ export default class GameOverScene extends Phaser.Scene {
   }
 
   create() {
-    const { width, height } = this.scale;
+    const L = layout(this);
     const best = Storage.saveScore(this.finalScore);
 
     Leaderboard.sendScore(this.finalScore);
 
-    this.add.rectangle(width / 2, height / 2, width, height, 0x0a0e1a, 0.95);
+    this.add.rectangle(L.cx, L.cy, L.w, L.h, 0x0a0e1a);
 
-    this.add.text(width / 2, height * 0.2, 'ИГРА ОКОНЧЕНА', {
-      fontFamily: 'sans-serif',
-      fontSize: '28px',
-      fontStyle: 'bold',
-      color: '#ef4444'
-    }).setOrigin(0.5);
+    const cardH = Math.min(420, L.h * 0.55);
+    this.add
+      .rectangle(L.cx, L.cy - 20, L.w * 0.88, cardH, 0x1e293b, 0.95)
+      .setStrokeStyle(2, 0xef4444, 0.4);
 
-    this.add.text(width / 2, height * 0.35, `Счёт: ${this.finalScore}`, {
-      fontSize: '32px',
-      color: '#f8fafc'
-    }).setOrigin(0.5);
+    this.add
+      .text(L.cx, L.cy - cardH / 2 + 36, 'ИГРА ОКОНЧЕНА', {
+        fontFamily: 'Segoe UI, system-ui, sans-serif',
+        fontSize: `${L.fontHead}px`,
+        fontStyle: 'bold',
+        color: '#ef4444'
+      })
+      .setOrigin(0.5);
 
-    this.add.text(width / 2, height * 0.42, `Высота: ${this.height} m  |  Монеты: ${this.coins}`, {
-      fontSize: '16px',
-      color: '#94a3b8'
-    }).setOrigin(0.5);
+    this.add
+      .text(L.cx, L.cy - 30, `${this.finalScore}`, {
+        fontFamily: 'Segoe UI, system-ui, sans-serif',
+        fontSize: `${L.fontTitle}px`,
+        color: '#f8fafc',
+        fontStyle: 'bold'
+      })
+      .setOrigin(0.5);
 
-    this.add.text(width / 2, height * 0.48, `Рекорд: ${best}`, {
-      fontSize: '18px',
-      color: '#38bdf8'
-    }).setOrigin(0.5);
+    this.add
+      .text(L.cx, L.cy + 10, 'очков', {
+        fontFamily: 'Segoe UI, system-ui, sans-serif',
+        fontSize: `${L.fontSmall}px`,
+        color: '#94a3b8'
+      })
+      .setOrigin(0.5);
 
-    this.makeBtn(width / 2, height * 0.58, 'ЗАНОВО', 0x2563eb, () => {
+    this.add
+      .text(L.cx, L.cy + 44, `Высота ${this.height} m   ·   Монеты ${this.coins}`, {
+        fontFamily: 'Segoe UI, system-ui, sans-serif',
+        fontSize: `${L.fontBody}px`,
+        color: '#94a3b8'
+      })
+      .setOrigin(0.5);
+
+    this.add
+      .text(L.cx, L.cy + 78, `Рекорд: ${best}`, {
+        fontFamily: 'Segoe UI, system-ui, sans-serif',
+        fontSize: `${L.fontBody}px`,
+        color: '#38bdf8',
+        fontStyle: '600'
+      })
+      .setOrigin(0.5);
+
+    const btnY = L.cy + cardH / 2 - 50;
+    const gap = L.btnH + 12;
+
+    createButton(this, L.cx, btnY - gap * 2, 'ЗАНОВО', () => {
       haptic('medium');
       hideMainButton();
       this.restartGame();
     });
 
-    this.makeBtn(width / 2, height * 0.68, 'ПОДЕЛИТЬСЯ', 0x475569, () => {
+    createButton(this, L.cx, btnY - gap, 'ПОДЕЛИТЬСЯ', () => {
       haptic('light');
       shareScore(this.finalScore);
-    });
+    }, 0x475569);
 
-    this.makeBtn(width / 2, height * 0.78, 'МЕНЮ', 0x334155, () => {
+    createButton(this, L.cx, btnY, 'В МЕНЮ', () => {
       hideMainButton();
       this.scene.start('MenuScene');
-    });
+    }, 0x334155);
 
     this.cleanupMain = setupMainButton('Играть снова', () => {
       hideMainButton();
@@ -70,16 +100,6 @@ export default class GameOverScene extends Phaser.Scene {
     this.scene.stop('GameOverScene');
     this.scene.start('GameScene');
     this.scene.launch('UIScene');
-  }
-
-  makeBtn(x, y, label, color, cb) {
-    const bg = this.add.rectangle(x, y, 220, 48, color).setInteractive({ useHandCursor: true });
-    const text = this.add.text(x, y, label, {
-      fontSize: '18px',
-      color: '#fff'
-    }).setOrigin(0.5);
-    bg.on('pointerdown', cb);
-    return { bg, text };
   }
 
   shutdown() {

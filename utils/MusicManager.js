@@ -7,8 +7,8 @@ const CHORDS = [
   [349.23, 392.0, 523.25]
 ];
 
-const BASE_VOLUME = 0.1;
-const DUCK_VOLUME = 0.04;
+const MAX_GAIN = 0.14;
+const DUCK_RATIO = 0.4;
 
 class MusicManager {
   constructor() {
@@ -17,9 +17,23 @@ class MusicManager {
     this.filter = null;
     this.playing = false;
     this.unlocked = false;
+    this.ducked = false;
     this.intervalId = null;
     this.chordIndex = 0;
-    this.targetVolume = BASE_VOLUME;
+    this.targetVolume = 0;
+  }
+
+  getVolumePercent() {
+    const v = Storage.getSettings().volume;
+    return Math.max(0, Math.min(100, v ?? 70));
+  }
+
+  getBaseVolume() {
+    return MAX_GAIN * (this.getVolumePercent() / 100);
+  }
+
+  getDuckVolume() {
+    return this.getBaseVolume() * DUCK_RATIO;
   }
 
   init() {
@@ -38,6 +52,7 @@ class MusicManager {
 
     this.master.connect(this.filter);
     this.filter.connect(this.ctx.destination);
+    this.targetVolume = this.getBaseVolume();
   }
 
   async unlock() {
@@ -56,11 +71,18 @@ class MusicManager {
     return Storage.getSettings().sound;
   }
 
+  applyVolume() {
+    this.targetVolume = this.ducked ? this.getDuckVolume() : this.getBaseVolume();
+    if (this.playing && this.isEnabled()) {
+      this.fadeTo(this.targetVolume, 0.25);
+    }
+  }
+
   sync() {
     if (!this.unlocked) return;
     if (this.isEnabled()) {
       this.start();
-      this.fadeTo(this.targetVolume);
+      this.applyVolume();
     } else {
       this.stop();
     }
@@ -75,10 +97,8 @@ class MusicManager {
   }
 
   duck(active) {
-    this.targetVolume = active ? DUCK_VOLUME : BASE_VOLUME;
-    if (this.playing && this.isEnabled()) {
-      this.fadeTo(this.targetVolume, 0.4);
-    }
+    this.ducked = active;
+    this.applyVolume();
   }
 
   playChord() {
@@ -89,6 +109,7 @@ class MusicManager {
 
     const now = this.ctx.currentTime;
     const duration = 5.8;
+    const volScale = this.getVolumePercent() / 100;
 
     freqs.forEach((freq, i) => {
       const osc = this.ctx.createOscillator();
@@ -97,7 +118,7 @@ class MusicManager {
       osc.type = i === 0 ? 'triangle' : 'sine';
       osc.frequency.value = freq;
 
-      const peak = 0.07 / freqs.length;
+      const peak = (0.07 / freqs.length) * volScale;
       gain.gain.setValueAtTime(0, now);
       gain.gain.linearRampToValueAtTime(peak, now + 1.2);
       gain.gain.linearRampToValueAtTime(peak * 0.85, now + duration - 1.4);
@@ -116,7 +137,7 @@ class MusicManager {
     this.playing = true;
     this.playChord();
     this.intervalId = setInterval(() => this.playChord(), 5200);
-    this.fadeTo(this.targetVolume);
+    this.applyVolume();
   }
 
   stop() {

@@ -3,6 +3,13 @@ import { Storage } from '../utils/Storage.js';
 import { Leaderboard } from '../utils/Leaderboard.js';
 import { haptic, hideMainButton } from '../utils/TelegramApp.js';
 import { music, bindMusicUnlock } from '../utils/MusicManager.js';
+import {
+  layout,
+  createButton,
+  createPanel,
+  createToggleRow,
+  createVolumeRow
+} from '../utils/UI.js';
 
 export default class MenuScene extends Phaser.Scene {
   constructor() {
@@ -12,110 +19,125 @@ export default class MenuScene extends Phaser.Scene {
   create() {
     hideMainButton();
     bindMusicUnlock(this);
-    const { width, height } = this.scale;
-    const settings = Storage.getSettings();
+
+    const L = layout(this);
     const best = Storage.loadScore();
 
-    this.add.rectangle(width / 2, height / 2, width, height, 0x0a0e1a);
+    this.add.rectangle(L.cx, L.cy, L.w, L.h, 0x0a0e1a);
 
-    this.add.text(width / 2, height * 0.22, 'GRAVITY FLIP', {
-      fontFamily: 'sans-serif',
-      fontSize: '32px',
-      fontStyle: 'bold',
-      color: '#38bdf8'
-    }).setOrigin(0.5);
+    this.add
+      .text(L.cx, L.h * 0.14, 'GRAVITY FLIP', {
+        fontFamily: 'Segoe UI, system-ui, sans-serif',
+        fontSize: `${L.fontTitle}px`,
+        fontStyle: 'bold',
+        color: '#38bdf8'
+      })
+      .setOrigin(0.5);
 
-    this.add.text(width / 2, height * 0.32, `Рекорд: ${best}`, {
-      fontFamily: 'sans-serif',
-      fontSize: '18px',
-      color: '#94a3b8'
-    }).setOrigin(0.5);
+    this.add
+      .text(L.cx, L.h * 0.22, `Рекорд: ${best}`, {
+        fontFamily: 'Segoe UI, system-ui, sans-serif',
+        fontSize: `${L.fontBody}px`,
+        color: '#94a3b8'
+      })
+      .setOrigin(0.5);
 
-    this.makeButton(width / 2, height * 0.48, 'ИГРАТЬ', 0x2563eb, () => {
+    const btnY0 = L.h * 0.38;
+    const btnGap = L.btnH + 14;
+
+    createButton(this, L.cx, btnY0, '▶  ИГРАТЬ', () => {
       haptic('medium');
       music.unlock();
       this.scene.start('GameScene');
       this.scene.launch('UIScene');
     });
 
-    this.makeButton(width / 2, height * 0.58, 'ТАБЛИЦА', 0x475569, async () => {
+    createButton(this, L.cx, btnY0 + btnGap, 'ТАБЛИЦА ЛИДЕРОВ', async () => {
       haptic('light');
       const data = await Leaderboard.getTopScores();
-      const lines = (data.scores || data).slice(0, 5).map((e, i) => `${i + 1}. ${e.username}: ${e.score}`);
-      this.showOverlay('Лидеры', lines.length ? lines.join('\n') : 'Пока нет данных');
-    });
+      const list = data.scores || data;
+      const lines = list.slice(0, 5).map((e, i) => `${i + 1}.  ${e.username}  —  ${e.score}`);
+      this.showInfo('Лидеры', lines.length ? lines.join('\n') : 'Пока нет записей');
+    }, 0x475569);
 
-    this.makeButton(width / 2, height * 0.68, 'НАСТРОЙКИ', 0x475569, () => {
+    createButton(this, L.cx, btnY0 + btnGap * 2, '⚙  НАСТРОЙКИ', () => {
       haptic('light');
-      this.showSettings(settings);
+      this.showSettings();
+    }, 0x475569);
+
+    this.add
+      .text(L.cx, L.h - L.pad - L.fontSmall * 2, 'Нажмите экран — прыжок\nВедите палец — движение', {
+        fontFamily: 'Segoe UI, system-ui, sans-serif',
+        fontSize: `${L.fontSmall}px`,
+        color: '#64748b',
+        align: 'center',
+        lineSpacing: 6
+      })
+      .setOrigin(0.5, 1);
+  }
+
+  showInfo(title, body) {
+    const L = layout(this);
+    const panel = createPanel(this, {
+      title,
+      panelH: Math.min(280, L.h * 0.4),
+      onBack: () => panel.destroy()
     });
 
-    this.add.text(width / 2, height * 0.88, 'Нажмите экран — прыжок  |  Ведите палец — влево/вправо', {
-      fontFamily: 'sans-serif',
-      fontSize: '12px',
-      color: '#64748b',
-      align: 'center',
-      wordWrap: { width: width - 40 }
-    }).setOrigin(0.5);
+    panel.content.add(
+      this.add
+        .text(0, 40, body, {
+          fontFamily: 'Segoe UI, system-ui, sans-serif',
+          fontSize: `${L.fontBody}px`,
+          color: '#cbd5e1',
+          align: 'center',
+          lineSpacing: 8
+        })
+        .setOrigin(0.5, 0)
+    );
   }
 
-  makeButton(x, y, label, color, cb) {
-    const btn = this.add.container(x, y);
-    const bg = this.add.rectangle(0, 0, 220, 48, color).setInteractive({ useHandCursor: true });
-    const text = this.add.text(0, 0, label, {
-      fontFamily: 'sans-serif',
-      fontSize: '18px',
-      color: '#ffffff'
-    }).setOrigin(0.5);
-    btn.add([bg, text]);
-    bg.on('pointerdown', cb);
-    return btn;
-  }
+  showSettings() {
+    const settings = { ...Storage.getSettings() };
+    if (settings.volume == null) settings.volume = 70;
 
-  showOverlay(title, body) {
-    const { width, height } = this.scale;
-    const panel = this.add.container(width / 2, height / 2).setDepth(100);
-    const dim = this.add.rectangle(0, 0, width, height, 0x000000, 0.7).setInteractive();
-    const box = this.add.rectangle(0, 0, width * 0.85, 200, 0x1e293b);
-    const t = this.add.text(0, -70, title, { fontSize: '22px', color: '#f8fafc' }).setOrigin(0.5);
-    const b = this.add.text(0, 0, body, {
-      fontSize: '16px',
-      color: '#cbd5e1',
-      align: 'center',
-      wordWrap: { width: width * 0.75 }
-    }).setOrigin(0.5);
-    const close = this.add.text(0, 80, 'Закрыть', { fontSize: '18px', color: '#38bdf8' }).setOrigin(0.5).setInteractive();
-    panel.add([dim, box, t, b, close]);
-    close.on('pointerdown', () => panel.destroy());
-    dim.on('pointerdown', () => panel.destroy());
-  }
-
-  showSettings(settings) {
-    const { width, height } = this.scale;
-    const panel = this.add.container(width / 2, height / 2).setDepth(100);
-    const dim = this.add.rectangle(0, 0, width, height, 0x000000, 0.7).setInteractive();
-    const box = this.add.rectangle(0, 0, width * 0.85, 240, 0x1e293b);
-    const title = this.add.text(0, -90, 'Настройки', { fontSize: '22px', color: '#f8fafc' }).setOrigin(0.5);
-
-    const mkToggle = (y, label, key) => {
-      const on = settings[key];
-      const txt = this.add.text(0, y, `${label}: ${on ? 'ВКЛ' : 'ВЫКЛ'}`, {
-        fontSize: '18px',
-        color: '#38bdf8'
-      }).setOrigin(0.5).setInteractive();
-      txt.on('pointerdown', () => {
-        settings[key] = !settings[key];
-        Storage.saveSettings(settings);
-        music.sync();
+    const L = layout(this);
+    const panel = createPanel(this, {
+      title: 'Настройки',
+      panelH: Math.min(400, L.h * 0.62),
+      onBack: () => {
+        haptic('light');
         panel.destroy();
-        this.scene.restart();
-      });
-      return txt;
-    };
+      }
+    });
 
-    const close = this.add.text(0, 90, 'Закрыть', { fontSize: '18px', color: '#94a3b8' }).setOrigin(0.5).setInteractive();
-    panel.add([dim, box, title, mkToggle(-20, 'Звук', 'sound'), mkToggle(30, 'Вибрация', 'haptic'), close]);
-    close.on('pointerdown', () => panel.destroy());
-    dim.on('pointerdown', () => panel.destroy());
+    const save = () => Storage.saveSettings(settings);
+    const rowGap = 56;
+
+    panel.content.add(
+      createToggleRow(this, 0, 20, 'Звук', settings.sound, (v) => {
+        settings.sound = v;
+        save();
+        music.sync();
+        haptic('light');
+      })
+    );
+
+    panel.content.add(
+      createToggleRow(this, 0, 20 + rowGap, 'Вибрация', settings.haptic, (v) => {
+        settings.haptic = v;
+        save();
+        haptic('light');
+      })
+    );
+
+    panel.content.add(
+      createVolumeRow(this, 0, 20 + rowGap * 2 + 16, settings.volume, (v) => {
+        settings.volume = v;
+        save();
+        music.applyVolume();
+        haptic('light');
+      })
+    );
   }
 }
