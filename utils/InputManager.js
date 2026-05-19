@@ -3,18 +3,19 @@ export class InputManager {
     this.scene = scene;
 
     scene.input.on('pointerdown', (pointer) => {
-      scene.events.emit('jump');
-      const { width } = scene.scale;
-      const dir = (pointer.x / width - 0.5) * 2;
-      scene.events.emit('steer', Math.max(-1, Math.min(1, dir)));
+      scene.events.emit('steer', this.getSteer(pointer));
     });
 
     scene.input.on('pointermove', (pointer) => {
       if (!pointer.isDown) return;
-      const { width } = scene.scale;
-      const dir = (pointer.x / width - 0.5) * 2;
-      scene.events.emit('steer', Math.max(-1, Math.min(1, dir)));
+      scene.events.emit('steer', this.getSteer(pointer));
     });
+  }
+
+  getSteer(pointer) {
+    const { width } = this.scene.scale;
+    const dir = (pointer.x / width - 0.5) * 2;
+    return Math.max(-1, Math.min(1, dir));
   }
 
   destroy() {

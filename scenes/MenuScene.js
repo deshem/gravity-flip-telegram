@@ -64,9 +64,9 @@ export default class MenuScene extends Phaser.Scene {
       this,
       L.cx,
       L.h - L.safeBottom - L.pad,
-      'Нажмите экран — прыжок\nВедите палец — движение',
+      'Ведите палец — влево / вправо',
       L.fontSmall,
-      { color: '#64748b', align: 'center', lineSpacing: 8 }
+      { color: '#64748b', align: 'center' }
     ).setOrigin(0.5, 1);
   }
 
