@@ -19,6 +19,7 @@ export default class GameOverScene extends Phaser.Scene {
   create() {
     const L = layout(this);
     const best = Storage.saveScore(this.finalScore);
+    const bestCoins = Storage.saveBestCoins(this.coins);
 
     Leaderboard.sendScore(this.finalScore);
 
@@ -84,6 +85,13 @@ export default class GameOverScene extends Phaser.Scene {
 
     addText(this, L.cx, y + bodySize / 2, `Рекорд: ${best}`, bodySize, {
       color: '#38bdf8',
+      fontStyle: '600',
+      align: 'center'
+    }).setOrigin(0.5);
+    y += bodySize + 10;
+
+    addText(this, L.cx, y + bodySize / 2, `Рекорд монет: ${bestCoins}`, bodySize, {
+      color: '#fbbf24',
       fontStyle: '600',
       align: 'center'
     }).setOrigin(0.5);

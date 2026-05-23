@@ -1,5 +1,5 @@
 const SCORE_KEY = 'gravity_flip_best';
-const COINS_KEY = 'gravity_flip_coins';
+const COINS_BEST_KEY = 'gravity_flip_best_coins';
 const SETTINGS_KEY = 'gravity_flip_settings';
 
 const defaultSettings = { sound: true, haptic: true, volume: 70 };
@@ -39,11 +39,16 @@ export class Storage {
     return parseInt(localStorage.getItem(SCORE_KEY) || '0', 10);
   }
 
-  static saveCoins(total) {
-    localStorage.setItem(COINS_KEY, String(total));
+  /** Лучший результат монет за одну игру (только максимум) */
+  static saveBestCoins(coins) {
+    const best = Storage.loadBestCoins();
+    if (coins > best) {
+      localStorage.setItem(COINS_BEST_KEY, String(coins));
+    }
+    return Math.max(coins, best);
   }
 
-  static loadCoins() {
-    return parseInt(localStorage.getItem(COINS_KEY) || '0', 10);
+  static loadBestCoins() {
+    return parseInt(localStorage.getItem(COINS_BEST_KEY) || '0', 10);
   }
 }

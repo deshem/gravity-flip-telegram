@@ -213,7 +213,7 @@ export default class GameScene extends Phaser.Scene {
 
     const finalScore = Math.floor(this.maxHeight) + this.coins * 10;
     Storage.saveScore(finalScore);
-    Storage.saveCoins(Storage.loadCoins() + this.coins);
+    Storage.saveBestCoins(this.coins);
 
     this.scene.stop('UIScene');
     this.scene.switch('GameOverScene', {
