@@ -47,4 +47,4 @@ https://ВАШ-ПРОЕКТ.vercel.app/api/stats?secret=ВАШ_STATS_READ_SECRET
 ## Важно
 
 - Счётчик работает **только в Telegram** (есть `initData`). Игра в обычном браузере на `vercel.app` не увеличивает счётчик.
-- URL Mini App в BotFather: `https://ВАШ-ПРОЕКТ.vercel.app/game/`
+- URL Mini App в BotFather: `https://ВАШ-ПРОЕКТ.vercel.app/`

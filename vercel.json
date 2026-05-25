@@ -1,8 +1,5 @@
 {
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
-  "framework": "vite",
-  "rewrites": [
-    { "source": "/game", "destination": "/game/index.html" }
-  ]
+  "framework": "vite"
 }

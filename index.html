@@ -2,76 +2,14 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="description" content="Разработка игр и Telegram Mini App. Демо: Gravity Flip.">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="theme-color" content="#0a0e1a">
-  <title>Gravity Flip Studio</title>
-  <link rel="stylesheet" href="./studio.css">
+  <title>Gravity Flip</title>
+  <link rel="stylesheet" href="./style.css">
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
 <body>
-  <header class="header">
-    <span class="logo">GF Studio</span>
-    <a class="header-link" href="./game/">Играть</a>
-  </header>
-
-  <main>
-    <section class="hero">
-      <p class="badge">Telegram Mini App · Web-игры</p>
-      <h1>Gravity Flip Studio</h1>
-      <p class="lead">
-        Создаём лёгкие мобильные игры и мини-приложения для Telegram.
-        Ниже — демо нашего проекта в браузере.
-      </p>
-      <div class="actions">
-        <a class="btn btn-primary" href="./game/">▶ Играть в браузере</a>
-        <a class="btn btn-secondary" href="#demo">Смотреть демо</a>
-      </div>
-    </section>
-
-    <section class="cards">
-      <article class="card">
-        <h2>Игры</h2>
-        <p>Аркады, казуальные механики, Phaser, мобильная вёрстка.</p>
-      </article>
-      <article class="card">
-        <h2>Mini App</h2>
-        <p>Интеграция с Telegram: бот, Web App, вибрация, тема.</p>
-      </article>
-      <article class="card">
-        <h2>Быстрый старт</h2>
-        <p>Деплой на Vercel, HTTPS, обновления через Git.</p>
-      </article>
-    </section>
-
-    <section class="demo" id="demo">
-      <h2>Попробуйте Gravity Flip</h2>
-      <p class="demo-hint">Управление: ведите палец влево / вправо. Автопрыжки.</p>
-      <div class="frame-wrap">
-        <iframe
-          src="./game/"
-          title="Gravity Flip"
-          class="game-frame"
-          allow="fullscreen"
-          loading="lazy"
-        ></iframe>
-      </div>
-      <a class="btn btn-primary btn-full" href="./game/">Открыть на весь экран</a>
-    </section>
-
-    <section class="contact" id="contact">
-      <h2>Связаться</h2>
-      <p>Telegram-бот с игрой — подключите свой URL Mini App в BotFather.</p>
-      <p class="url-note">Сайт: <code id="site-url"></code></p>
-    </section>
-  </main>
-
-  <footer class="footer">
-    <p>© Gravity Flip Studio · Хостинг на Vercel (бесплатный план)</p>
-    <a href="./game/">Игра</a>
-  </footer>
-
-  <script>
-    document.getElementById('site-url').textContent = location.origin;
-  </script>
+  <div id="game-container"></div>
+  <script type="module" src="./main.js"></script>
 </body>
 </html>
