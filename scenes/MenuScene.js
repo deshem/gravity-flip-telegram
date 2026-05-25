@@ -12,6 +12,7 @@ import {
   createVolumeRow
 } from '../utils/UI.js';
 import { FEATURES } from '../utils/features.js';
+import { trackPlayer } from '../utils/Stats.js';
 
 export default class MenuScene extends Phaser.Scene {
   constructor() {
@@ -55,6 +56,7 @@ export default class MenuScene extends Phaser.Scene {
     createButton(this, L.cx, btnY0, '▶  ИГРАТЬ', () => {
       haptic('medium');
       music.unlock();
+      trackPlayer();
       this.scene.start('GameScene');
       this.scene.launch('UIScene');
     });

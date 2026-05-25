@@ -4,6 +4,7 @@ import { Storage } from '../utils/Storage.js';
 import { haptic } from '../utils/TelegramApp.js';
 import { music } from '../utils/MusicManager.js';
 import { addText } from '../utils/UI.js';
+import { trackPlayer } from '../utils/Stats.js';
 
 const GRAVITY = 520;
 const JUMP_VELOCITY = -400;
@@ -31,6 +32,7 @@ export default class GameScene extends Phaser.Scene {
   }
 
   create(data = {}) {
+    trackPlayer();
     this.isReviving = data.revive || false;
     const { width, height } = this.scale;
 
