@@ -12,6 +12,9 @@ const MOVE_SPEED = 200;
 const BOUNCE_COOLDOWN_MS = 140;
 const DEATH_OFFSET = 110 * 3;
 const MARGIN_X = 28;
+const MOVING_PLATFORM_CHANCE = 0.25; // Шанс того, что новая случайная платформа будет двигаться влево-вправо.
+const MOVING_PLATFORM_MIN_DURATION = 1600; // Самое быстрое время проезда платформы от края до края.
+const MOVING_PLATFORM_MAX_DURATION = 2600; // Самое медленное время проезда платформы от края до края.
 
 /** Расчёт дальности прыжка по физике arcade */
 function computeJumpMetrics() {
@@ -44,6 +47,7 @@ export default class GameScene extends Phaser.Scene {
     this.paused = false;
     this.steer = 0;
     this.lastBounceAt = 0;
+    this.platformTweens = []; // Храним tween'ы движущихся платформ, чтобы ставить их на паузу вместе с игрой.
 
     this.cameras.main.setBackgroundColor(0x0a0e1a);
     this.physics.world.gravity.y = GRAVITY;
@@ -59,7 +63,8 @@ export default class GameScene extends Phaser.Scene {
     const startPlatformY = height - 64;
     this.lastSpawnedPlatform = this.spawnPlatform(width / 2, startPlatformY, {
       width: 150,
-      coin: false
+      coin: false,
+      moving: false
     });
 
     for (let i = 0; i < 10; i++) {
@@ -128,7 +133,7 @@ export default class GameScene extends Phaser.Scene {
     }
 
     const nextX = Phaser.Math.Between(Math.floor(minX), Math.floor(maxX));
-    return this.spawnPlatform(nextX, nextY, { width: nextW });
+    return this.spawnPlatform(nextX, nextY, { width: nextW, moving: Math.random() < MOVING_PLATFORM_CHANCE });
   }
 
   bounce() {
@@ -161,6 +166,7 @@ export default class GameScene extends Phaser.Scene {
   }
 
   spawnPlatform(x, y, opts = {}) {
+    const { width } = this.scale; // Берём ширину экрана, чтобы задать границы движения платформы.
     const w = opts.width ?? Phaser.Math.Between(88, 118);
     const platform = this.platforms.create(x, y, 'platform');
     platform.setDisplaySize(w, 16);
@@ -171,9 +177,52 @@ export default class GameScene extends Phaser.Scene {
     if (spawnCoin) {
       const coin = this.coinGroup.create(x, y - 28, 'coin');
       coin.body.setAllowGravity(false);
+      platform.attachedCoin = coin; // Привязываем монету к платформе, чтобы она двигалась вместе с ней.
+    }
+
+    if (opts.moving) { // Часть платформ получает горизонтальное движение.
+      this.makePlatformMove(platform, width); // Запускаем движение платформы от края экрана до края экрана.
     }
 
     return platform;
+  }
+
+  makePlatformMove(platform, screenWidth) { // Настраивает движение одной платформы по горизонтали.
+    const halfWidth = platform.displayWidth / 2; // Половина ширины нужна, чтобы платформа не выезжала за экран.
+    const leftX = halfWidth + MARGIN_X; // Левая граница движения с небольшим отступом от края.
+    const rightX = screenWidth - halfWidth - MARGIN_X; // Правая граница движения с небольшим отступом от края.
+    const targetX = platform.x < screenWidth / 2 ? rightX : leftX; // Если платформа ближе к левому краю, сначала едем вправо, иначе влево.
+    const duration = Phaser.Math.Between(MOVING_PLATFORM_MIN_DURATION, MOVING_PLATFORM_MAX_DURATION); // Случайная скорость движения делает платформы менее одинаковыми.
+
+    platform.isMoving = true; // Помечаем платформу как движущуюся для читаемости и будущей логики.
+    platform.moveTween = this.tweens.add({ // Создаём tween, который двигает платформу по X.
+      targets: platform, // Цель tween'а — сама платформа.
+      x: targetX, // Конечная точка первого движения.
+      duration, // Сколько времени платформа едет до противоположного края.
+      ease: 'Sine.easeInOut', // Плавное ускорение и замедление на краях.
+      yoyo: true, // После достижения края платформа едет обратно.
+      repeat: -1, // Движение повторяется бесконечно.
+      onUpdate: () => { // На каждом кадре tween'а обновляем физическое тело.
+        platform.refreshBody(); // Static body Phaser не двигается само, поэтому синхронизируем тело с картинкой.
+        this.updateAttachedCoin(platform); // Монета над платформой должна ехать вместе с платформой.
+      }
+    });
+    this.platformTweens.push(platform.moveTween); // Запоминаем tween для pause/resume и уборки.
+  }
+
+  updateAttachedCoin(platform) { // Передвигает монету, привязанную к движущейся платформе.
+    const coin = platform.attachedCoin; // Достаём монету, которую создали вместе с платформой.
+    if (!coin?.active) return; // Если монету уже собрали или уничтожили, двигать нечего.
+    coin.x = platform.x; // Ставим монету по центру текущей позиции платформы.
+    coin.y = platform.y - 28; // Держим монету над платформой на той же высоте, что и при создании.
+    coin.body.updateFromGameObject(); // Синхронизируем физическое тело монеты с новой позицией.
+  }
+
+  destroyPlatform(platform) { // Аккуратно удаляет платформу и связанные с ней объекты.
+    platform.moveTween?.remove(); // Останавливаем tween, чтобы он не пытался двигать удалённую платформу.
+    this.platformTweens = this.platformTweens.filter((tween) => tween !== platform.moveTween); // Убираем tween из списка активных tween'ов.
+    if (platform.attachedCoin?.active) platform.attachedCoin.destroy(); // Если монета ещё висит над платформой, удаляем её вместе с платформой.
+    platform.destroy(); // Удаляем саму платформу из сцены и физики.
   }
 
   collectCoin(player, coin) {
@@ -188,6 +237,7 @@ export default class GameScene extends Phaser.Scene {
     if (this.paused) {
       this.physics.world.pause();
       this.playerSpin?.pause();
+      this.platformTweens.forEach((tween) => tween.pause()); // Движущиеся платформы тоже останавливаются во время паузы.
       music.duck(true);
       const { width, height } = this.scale;
       this.pauseOverlay = this.add.container(width / 2, height / 2).setScrollFactor(0).setDepth(50);
@@ -202,6 +252,7 @@ export default class GameScene extends Phaser.Scene {
     } else {
       this.physics.world.resume();
       this.playerSpin?.resume();
+      this.platformTweens.forEach((tween) => tween.resume()); // После снятия паузы платформы продолжают движение.
       music.duck(false);
       this.pauseOverlay?.destroy();
       this.pauseOverlay = null;
@@ -244,7 +295,7 @@ export default class GameScene extends Phaser.Scene {
     }
 
     this.platforms.getChildren().forEach((p) => {
-      if (p.y > this.player.y + height + 200) p.destroy();
+      if (p.y > this.player.y + height + 200) this.destroyPlatform(p);
     });
 
     this.coinGroup.getChildren().forEach((c) => {
@@ -259,6 +310,8 @@ export default class GameScene extends Phaser.Scene {
   shutdown() {
     this.playerSpin?.stop();
     this.playerSpin?.remove();
+    this.platformTweens.forEach((tween) => tween.remove());
+    this.platformTweens = [];
     this.inputManager?.destroy();
     this.events.off('steer');
     this.events.off('pauseGame');
