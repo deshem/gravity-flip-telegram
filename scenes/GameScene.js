@@ -282,7 +282,6 @@ export default class GameScene extends Phaser.Scene {
     const { width, height } = this.scale;
 
     this.player.setVelocityX(this.steer * MOVE_SPEED);
-    this.steer *= 0.9;
 
     const climbed = Math.max(0, (this.startY - this.player.y) / 10);
     this.maxHeight = Math.max(this.maxHeight, climbed);

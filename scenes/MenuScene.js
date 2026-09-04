@@ -13,6 +13,7 @@ import {
 } from '../utils/UI.js';
 import { FEATURES } from '../utils/features.js';
 import { trackPlayer } from '../utils/Stats.js';
+import { requestTiltPermission } from '../utils/InputManager.js';
 
 export default class MenuScene extends Phaser.Scene {
   constructor() {
@@ -53,9 +54,10 @@ export default class MenuScene extends Phaser.Scene {
     const btnY0 = L.safeTop + L.usableH * 0.4;
     const btnGap = L.btnH + 14;
 
-    createButton(this, L.cx, btnY0, '▶  ИГРАТЬ', () => {
+    createButton(this, L.cx, btnY0, '▶  ИГРАТЬ', async () => {
       haptic('medium');
       music.unlock();
+      await requestTiltPermission();
       trackPlayer();
       this.scene.start('GameScene');
       this.scene.launch('UIScene');
@@ -79,7 +81,7 @@ export default class MenuScene extends Phaser.Scene {
       this,
       L.cx,
       L.h - L.safeBottom - L.pad,
-      'Ведите палец — влево / вправо',
+      'Наклоняйте телефон или ведите палец',
       L.fontSmall,
       { color: '#64748b', align: 'center' }
     ).setOrigin(0.5, 1);
